@@ -208,6 +208,18 @@ PROB_COLORS = {
 @st.cache_resource
 def load_model(model_path: str):
     try:
+        # Auto-download from HuggingFace if file not found locally
+        if not Path(model_path).exists():
+            try:
+                model_url = st.secrets["MODEL_URL"]
+                os.makedirs(Path(model_path).parent, exist_ok=True)
+                with st.spinner("⬇️ Downloading model from Hugging Face..."):
+                    import urllib.request
+                    urllib.request.urlretrieve(model_url, model_path)
+                st.success("✅ Model downloaded!")
+            except Exception as download_err:
+                return None, None, f"Model not found locally and download failed: {download_err}"
+
         ck          = torch.load(model_path, map_location=DEVICE)
         classes     = ck.get('classes', DEFAULT_CLASSES)
         num_classes = ck.get('num_classes', len(classes))
