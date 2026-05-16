@@ -64,8 +64,16 @@ It provides instant predictions with confidence scores through an interactive St
 
 ---
 
-### 🧠 Prediction Result
-![Prediction](assets/prediction.png)
+### 🧠 Prediction Results
+
+#### 🔴 Hemorrhage
+![Hemorrhage](assets/hemmorhage.png)
+
+#### 🟢 Normal
+![Normal](assets/normal.png)
+
+#### 🟡 Pituitary Tumor
+![Pituitary Tumor](assets/pituitary.png)
 
 ---
 
