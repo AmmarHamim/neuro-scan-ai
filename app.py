@@ -208,19 +208,32 @@ PROB_COLORS = {
 @st.cache_resource
 def load_model(model_path: str):
     try:
-        # Auto-download from HuggingFace if file not found locally
-        if not Path(model_path).exists():
+        local_path = Path(model_path)
+
+        # ── Download if not found locally ─────────────────────────
+        if not local_path.exists():
+            # Try Streamlit secrets first
+            model_url = None
             try:
                 model_url = st.secrets["MODEL_URL"]
-                os.makedirs(Path(model_path).parent, exist_ok=True)
-                with st.spinner("⬇️ Downloading model from Hugging Face..."):
-                    import urllib.request
-                    urllib.request.urlretrieve(model_url, model_path)
-                st.success("✅ Model downloaded!")
-            except Exception as download_err:
-                return None, None, f"Model not found locally and download failed: {download_err}"
+            except Exception:
+                pass
 
-        ck          = torch.load(model_path, map_location=DEVICE)
+            # Fallback: hardcode your HF URL here directly
+            if not model_url:
+                model_url = "https://huggingface.co/Hamim88/neuro-scan-ai/resolve/main/brain_classifier_final.pth"
+
+            os.makedirs(local_path.parent, exist_ok=True)
+
+            with st.spinner("⬇️ Downloading model weights (~100MB)..."):
+                import requests
+                response = requests.get(model_url, stream=True)
+                response.raise_for_status()
+                with open(local_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+
+        ck          = torch.load(local_path, map_location=DEVICE)
         classes     = ck.get('classes', DEFAULT_CLASSES)
         num_classes = ck.get('num_classes', len(classes))
         model       = BrainCTClassifier(num_classes=num_classes).to(DEVICE)
@@ -235,6 +248,7 @@ def load_model(model_path: str):
             'dataset_size': ck.get('dataset_size', '?'),
         }
         return model, meta, None
+
     except Exception as e:
         return None, None, str(e)
 
